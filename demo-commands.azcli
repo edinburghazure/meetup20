@@ -1,0 +1,121 @@
+Overview
+https://docs.microsoft.com/en-us/azure/application-gateway/ingress-controller-overview
+
+Configurations Options
+Difference between Helm deployment and AKS Add-On
+
+Customers can only deploy one AGIC add-on per AKS cluster, and each AGIC add-on currently can only target one Application Gateway. For deployments that require more than one AGIC per cluster or multiple AGICs targeting one Application Gateway, please continue to use AGIC deployed through Helm.
+
+AKS Add-On Greenfield Deployment: Instructions on installing AGIC add-on, AKS, and Application Gateway on blank-slate infrastructure.
+https://docs.microsoft.com/en-us/azure/application-gateway/tutorial-ingress-controller-add-on-new
+
+AKS Add-On Brownfield Deployment: Install AGIC add-on on an AKS cluster with an existing Application Gateway.
+https://docs.microsoft.com/en-us/azure/application-gateway/tutorial-ingress-controller-add-on-existing
+
+Helm Greenfield Deployment: Install AGIC through Helm, new AKS cluster, and new Application Gateway on blank-slate infrastructure.
+https://docs.microsoft.com/en-us/azure/application-gateway/ingress-controller-install-new
+
+Helm Brownfield Deployment: Deploy AGIC through Helm on an existing AKS cluster and Application Gateway.
+https://docs.microsoft.com/en-us/azure/application-gateway/ingress-controller-install-existing
+
+
+
+##################################
+### Login to your Azure Tenant ###
+##################################
+az login
+az account set --subscription ""
+az account show
+
+
+#################################
+### Enable Pod Subnet Preview ###
+#################################
+https://docs.microsoft.com/en-us/azure/aks/configure-azure-cni#dynamic-allocation-of-ips-and-enhanced-subnet-support-preview
+
+
+#######################################
+### Create Resource Group Framework ###
+#######################################
+https://docs.microsoft.com/en-us/cli/azure/group?view=azure-cli-latest
+
+
+##############################
+### Create Virtual Network ###
+##############################
+https://docs.microsoft.com/en-us/cli/azure/network/vnet?view=azure-cli-latest#az-network-vnet-create
+
+
+#############################
+### Create Public DNS Zone###
+#############################
+
+
+
+
+###############################################
+### Create LetsEncrypt Wildcard Certificate ###
+###############################################
+
+
+
+#######################################
+### Create Shared Service Principal ###
+#######################################
+https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli
+
+
+
+############################################
+### Create Application Gateway Public IP ###
+############################################
+https://docs.microsoft.com/en-us/cli/azure/network/public-ip?view=azure-cli-latest#az-network-public-ip-create
+
+
+
+################################################
+### Create Application Gateway - Standard v2 ###
+################################################
+https://docs.microsoft.com/en-us/cli/azure/network/application-gateway?view=azure-cli-latest#az-network-application-gateway-create
+
+
+#######################################################################
+### Add Service Principal RBAC to Application Gateway - Standard v2 ###
+#######################################################################
+https://docs.microsoft.com/en-us/cli/azure/role/assignment?view=azure-cli-latest#az-role-assignment-create
+
+
+
+###################################
+### Create Public AKS Cluster 1 ###
+###################################
+https://docs.microsoft.com/en-us/cli/azure/aks?view=azure-cli-latest#az-aks-create
+
+
+###################################
+### Create Public AKS Cluster 2 ###
+###################################
+https://docs.microsoft.com/en-us/cli/azure/aks?view=azure-cli-latest#az-aks-create
+
+
+##############################################
+### Base64 Encode Shared Service Principal ###
+##############################################
+# This will used be the AGIC pods to write configuration changes to the Application Gateway
+
+
+#############################################################################################
+### Install the Helm Application Gateway Ingress Controller (AGIC) Package to AKS Cluster ###
+#############################################################################################
+
+
+
+
+
+
+
+
+
+
+
+

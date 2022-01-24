@@ -26,7 +26,7 @@ https://docs.microsoft.com/en-us/azure/application-gateway/ingress-controller-in
 ### Login to your Azure Tenant ###
 ##################################
 az login
-az account set --subscription ""
+az account set --subscription "Microsoft Partner Network"
 az account show
 
 
@@ -36,7 +36,12 @@ az account show
 https://docs.microsoft.com/en-us/azure/aks/configure-azure-cni#dynamic-allocation-of-ips-and-enhanced-subnet-support-preview
 
 az feature register --namespace "Microsoft.ContainerService" --name "PodSubnetPreview"
+az feature list -o table --query "[?contains(name, 'Microsoft.ContainerService/PodSubnetPreview')].{Name:name,State:properties.state}"
+az provider register --namespace Microsoft.ContainerService
+
 az feature register --namespace "Microsoft.ContainerService" --name "AutoUpgradePreview"
+az feature list -o table --query "[?contains(name, 'Microsoft.ContainerService/AutoUpgradePreview')].{Name:name,State:properties.state}"
+az provider register --namespace Microsoft.ContainerService
 
 az extension add --name "aks-preview"
 az extension update --name "aks-preview"
@@ -94,14 +99,6 @@ az network dns zone create \
     -g dns \
     -p edinburghazure.uk
 
-az network dns record-set a add-record \
--n * \
--a 1.1.1.1 \
--g dns \
--z meetup20.edinburghazure.uk
-
-
-
 
 ###############################################
 ### Create LetsEncrypt Wildcard Certificate ###
@@ -114,6 +111,7 @@ az network dns record-set a add-record \
 #######################################
 https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli
 
+az ad sp create-for-rbac --name sp-meetup20-agic
 
 
 ############################################
@@ -121,6 +119,23 @@ https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azu
 ############################################
 https://docs.microsoft.com/en-us/cli/azure/network/public-ip?view=azure-cli-latest#az-network-public-ip-create
 
+az network public-ip create \
+    -n pip-meetup20-appgw-neu-agic-01 \
+    -l northeurope \
+    -g rg-meetup20-appgw-neu \
+    --sku Standard \
+    -z 1 2 3
+
+pip_pub_ip=$(az network public-ip show \
+    -g rg-meetup20-appgw-neu \
+    -n pip-meetup20-appgw-neu-agic-01 \
+    --query "{address: ipAddress}" --output tsv)
+
+az network dns record-set a add-record \
+-n "*" \
+-a $pip_pub_ip \
+-g dns \
+-z meetup20.edinburghazure.uk
 
 
 ################################################
@@ -128,12 +143,28 @@ https://docs.microsoft.com/en-us/cli/azure/network/public-ip?view=azure-cli-late
 ################################################
 https://docs.microsoft.com/en-us/cli/azure/network/application-gateway?view=azure-cli-latest#az-network-application-gateway-create
 
+az network application-gateway create \
+    -n appgw-meetup20-neu-agic-01 \
+    -l northeurope \
+    -g rg-meetup20-appgw-neu \
+    --sku Standard_v2 \
+    --capacity 1 \
+    --min-capacity 1 \
+    --max-capacity 5 \
+    --private-ip-address 192.168.250.4 \
+    --public-ip-address pip-meetup20-appgw-neu-agic-01 \
+    --subnet /subscriptions/0a8ccb19-a4b2-45b1-b80a-e46aa9f05716/resourceGroups/rg-meetup20-vnet-neu/providers/Microsoft.Network/virtualNetworks/vnet-meetup20-neu/subnets/sn-meetup20-appgw-neu
+
 
 #######################################################################
 ### Add Service Principal RBAC to Application Gateway - Standard v2 ###
 #######################################################################
 https://docs.microsoft.com/en-us/cli/azure/role/assignment?view=azure-cli-latest#az-role-assignment-create
 
+az role assignment create \
+    --assignee xxxxxxxxx \
+    --role contributor \
+    --scope /subscriptions/0a8ccb19-a4b2-45b1-b80a-e46aa9f05716/resourceGroups/rg-meetup20-appgw-neu/providers/Microsoft.Network/applicationGateways/appgw-meetup20-neu-agic-01
 
 
 ###################################
@@ -141,11 +172,43 @@ https://docs.microsoft.com/en-us/cli/azure/role/assignment?view=azure-cli-latest
 ###################################
 https://docs.microsoft.com/en-us/cli/azure/aks?view=azure-cli-latest#az-aks-create
 
+az aks create \
+    -g rg-meetup20-aks01-neu \
+    --node-resource-group rg-meetup20-aks01-neu-nodes \
+    -n aks-meetup20-aks01-neu \
+    --load-balancer-sku standard \
+    --network-plugin azure \
+    --vnet-subnet-id /subscriptions/0a8ccb19-a4b2-45b1-b80a-e46aa9f05716/resourceGroups/rg-meetup20-vnet-neu/providers/Microsoft.Network/virtualNetworks/vnet-meetup20-neu/subnets/sn-meetup20-aks-nodes-neu \
+    --pod-subnet-id /subscriptions/0a8ccb19-a4b2-45b1-b80a-e46aa9f05716/resourceGroups/rg-meetup20-vnet-neu/providers/Microsoft.Network/virtualNetworks/vnet-meetup20-neu/subnets/sn-meetup20-aks-pods-neu \
+    --service-principal "xxxxxxxxx" \
+    --client-secret "xxxxxxx" \
+    --generate-ssh-keys \
+    --node-count 1 \
+    --zones 1 2 3 \
+    --node-vm-size Standard_B2s \
+    --max-pods 250
+
 
 ###################################
 ### Create Public AKS Cluster 2 ###
 ###################################
 https://docs.microsoft.com/en-us/cli/azure/aks?view=azure-cli-latest#az-aks-create
+
+az aks create \
+    -g rg-meetup20-aks02-neu \
+    --node-resource-group rg-meetup20-aks02-neu-nodes \
+    -n aks-meetup20-aks02-neu \
+    --load-balancer-sku standard \
+    --network-plugin azure \
+    --vnet-subnet-id /subscriptions/0a8ccb19-a4b2-45b1-b80a-e46aa9f05716/resourceGroups/rg-meetup20-vnet-neu/providers/Microsoft.Network/virtualNetworks/vnet-meetup20-neu/subnets/sn-meetup20-aks-nodes-neu \
+    --pod-subnet-id /subscriptions/0a8ccb19-a4b2-45b1-b80a-e46aa9f05716/resourceGroups/rg-meetup20-vnet-neu/providers/Microsoft.Network/virtualNetworks/vnet-meetup20-neu/subnets/sn-meetup20-aks-pods-neu \
+    --service-principal "xxxxxxxx" \
+    --client-secret "xxxxxxxx" \
+    --generate-ssh-keys \
+    --node-count 1 \
+    --zones 1 2 3 \
+    --node-vm-size Standard_B2s \
+    --max-pods 250
 
 
 ##############################################

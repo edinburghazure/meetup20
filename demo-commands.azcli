@@ -1,3 +1,5 @@
+Using a Shared Application Gateway Ingress Controller (AGIC) with Multi AKS Deployments
+
 Overview
 https://docs.microsoft.com/en-us/azure/application-gateway/ingress-controller-overview
 
@@ -29,9 +31,16 @@ az account show
 
 
 #################################
-### Enable Pod Subnet Preview ###
+### Enable Pod Subnet Preview Extension###
 #################################
 https://docs.microsoft.com/en-us/azure/aks/configure-azure-cni#dynamic-allocation-of-ips-and-enhanced-subnet-support-preview
+
+az feature register --namespace "Microsoft.ContainerService" --name "PodSubnetPreview"
+az feature register --namespace "Microsoft.ContainerService" --name "AutoUpgradePreview"
+
+az extension add --name "aks-preview"
+az extension update --name "aks-preview"
+az provider register --namespace "Microsoft.ContainerService"
 
 
 #######################################
@@ -39,16 +48,57 @@ https://docs.microsoft.com/en-us/azure/aks/configure-azure-cni#dynamic-allocatio
 #######################################
 https://docs.microsoft.com/en-us/cli/azure/group?view=azure-cli-latest
 
+az group create -l northeurope -n rg-meetup20-vnet-neu
+az group create -l northeurope -n rg-meetup20-services-neu
+az group create -l northeurope -n rg-meetup20-appgw-neu
+az group create -l northeurope -n rg-meetup20-aks01-neu
+az group create -l northeurope -n rg-meetup20-aks02-neu
+
 
 ##############################
 ### Create Virtual Network ###
 ##############################
 https://docs.microsoft.com/en-us/cli/azure/network/vnet?view=azure-cli-latest#az-network-vnet-create
 
+az network vnet create \
+    -g rg-meetup20-vnet-neu \
+    -n vnet-meetup20-neu \
+    --address-prefix 192.168.0.0/16
+
+az network vnet subnet create \
+    --address-prefixes 192.168.250.0/28 \
+    -n sn-meetup20-appgw-neu \
+    -g rg-meetup20-vnet-neu \
+    --vnet-name vnet-meetup20-neu
+
+az network vnet subnet create \
+    --address-prefixes 192.168.50.0/24 \
+    -n sn-meetup20-aks-nodes-neu \
+    -g rg-meetup20-vnet-neu \
+    --vnet-name vnet-meetup20-neu
+
+az network vnet subnet create \
+    --address-prefixes 192.168.100.0/22 \
+    -n sn-meetup20-aks-pods-neu \
+    -g rg-meetup20-vnet-neu \
+    --vnet-name vnet-meetup20-neu
+
 
 #############################
 ### Create Public DNS Zone###
 #############################
+https://docs.microsoft.com/en-us/cli/azure/network/dns/zone?view=azure-cli-latest#az-network-dns-zone-create
+
+az network dns zone create \
+    -n meetup20.edinburghazure.uk \
+    -g dns \
+    -p edinburghazure.uk
+
+az network dns record-set a add-record \
+-n * \
+-a 1.1.1.1 \
+-g dns \
+-z meetup20.edinburghazure.uk
 
 
 
